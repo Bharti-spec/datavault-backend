@@ -80,17 +80,17 @@ app.get('/users', tokenCheck, (req, res) => {
 })
 
 // FILE UPLOAD — Protected
-app.post('/upload', tokenCheck, upload.single('file'), (req, res) => {
+app.post('/upload', tokenCheck, projectCheck, upload.single('file'), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ message: 'Koi file nahi mili!' })
     }
 
-    const url = `http://localhost:3000/uploads/${req.file.filename}`
+    const url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`
 
     // Database mein save karo
     db.prepare(
-        'INSERT INTO files (user_id, filename, url) VALUES (?, ?, ?)'
-    ).run(req.user.id, req.file.filename, url)
+    'INSERT INTO files (user_id, filename, url, project_id) VALUES (?, ?, ?, ?)'
+).run(req.user.id, req.file.filename, url, req.project.id)
 
     res.json({
         message: 'File upload ho gayi!',
@@ -100,10 +100,29 @@ app.post('/upload', tokenCheck, upload.single('file'), (req, res) => {
 })
 
 // MERI FILES — dekho
-app.get('/files', tokenCheck, (req, res) => {
+app.get('/files', tokenCheck, projectCheck, (req, res) => {
     const files = db.prepare('SELECT * FROM files WHERE user_id = ?').all(req.user.id)
     res.json(files)
 })
+
+function projectCheck(req, res, next) {
+    const apiKey = req.headers['x-api-key']
+
+    if (!apiKey) {
+        return res.status(401).json({ message: 'API key missing hai!' })
+    }
+
+    const project = db.prepare(
+        'SELECT * FROM projects WHERE api_key = ?'
+    ).get(apiKey)
+
+    if (!project) {
+        return res.status(403).json({ message: 'Invalid API key!' })
+    }
+
+    req.project = project
+    next()
+}
 
 // CREATE PROJECT (separate route)
 app.post('/create-project', (req, res) => {

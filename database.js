@@ -12,18 +12,19 @@ db.exec(`
     )
 `)
 
-// Files table — naya!
+// Files table (UPDATED with project_id)
 db.exec(`
     CREATE TABLE IF NOT EXISTS files (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
         filename TEXT NOT NULL,
         url TEXT NOT NULL,
+        project_id INTEGER,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
 `)
 
-// Projects table — new
+// Projects table
 db.exec(`
     CREATE TABLE IF NOT EXISTS projects (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
