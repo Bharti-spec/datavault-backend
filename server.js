@@ -1,4 +1,5 @@
 const express = require('express')
+const cors = require('cors')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const multer = require('multer')
@@ -6,6 +7,7 @@ const path = require('path')
 const db = require('./database')
 
 const app = express()
+app.use(cors())
 app.use(express.json())
 app.use(express.static('public'))
 
@@ -102,6 +104,8 @@ app.get('/files', tokenCheck, (req, res) => {
     res.json(files)
 })
 
-app.listen(3000, () => {
-    console.log('Server chalu ho gaya! Port 3000 pe')
+const PORT = process.env.PORT || 3000
+
+app.listen(PORT, () => {
+    console.log(`Server chalu ho gaya! Port ${PORT} pe`)
 })
