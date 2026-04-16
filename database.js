@@ -23,5 +23,15 @@ db.exec(`
     )
 `)
 
+// Projects table — new
+db.exec(`
+    CREATE TABLE IF NOT EXISTS projects (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        api_key TEXT UNIQUE,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+`)
+
 console.log('Database ready hai! ✅')
 module.exports = db
