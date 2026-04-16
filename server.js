@@ -3,7 +3,6 @@ const cors = require('cors')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const multer = require('multer')
-const path = require('path')
 const crypto = require('crypto')
 const db = require('./database')
 
@@ -12,12 +11,11 @@ app.use(cors())
 app.use(express.json())
 app.use(express.static('public'))
 
-// Uploaded files access
 app.use('/uploads', express.static('uploads'))
 
 const SECRET = 'datavault-secret-key-123'
 
-// MULTER SETUP
+// ================= MULTER =================
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads/')
@@ -28,9 +26,9 @@ const storage = multer.diskStorage({
     }
 })
 
-const upload = multer({ storage: storage })
+const upload = multer({ storage })
 
-// TOKEN CHECK
+// ================= TOKEN CHECK =================
 function tokenCheck(req, res, next) {
     const authHeader = req.headers['authorization']
     const token = authHeader && authHeader.split(' ')[1]
@@ -48,7 +46,7 @@ function tokenCheck(req, res, next) {
     }
 }
 
-// PROJECT CHECK
+// ================= PROJECT CHECK =================
 function projectCheck(req, res, next) {
     const apiKey = req.headers['x-api-key']
 
@@ -68,14 +66,27 @@ function projectCheck(req, res, next) {
     next()
 }
 
-// HOME
+// ================= HOME =================
 app.get('/', (req, res) => {
     res.send('Datavault server chal raha hai 🚀')
 })
 
-// REGISTER
-app.post('/users', async (req, res) => {
+// ================= REGISTER =================
+app.post('/register', async (req, res) => {
     const { naam, email, password } = req.body
+
+    if (!email || !password || !naam) {
+        return res.status(400).json({ message: 'Sab fields fill karo!' })
+    }
+
+    const existingUser = db.prepare(
+        'SELECT * FROM users WHERE email = ?'
+    ).get(email)
+
+    if (existingUser) {
+        return res.status(400).json({ message: 'User already exists!' })
+    }
+
     const encryptedPassword = await bcrypt.hash(password, 10)
 
     const result = db.prepare(
@@ -85,7 +96,7 @@ app.post('/users', async (req, res) => {
     res.json({ message: 'User ban gaya!', id: result.lastInsertRowid })
 })
 
-// LOGIN
+// ================= LOGIN =================
 app.post('/login', async (req, res) => {
     const { email, password } = req.body
 
@@ -93,10 +104,15 @@ app.post('/login', async (req, res) => {
         'SELECT * FROM users WHERE email = ?'
     ).get(email)
 
-    if (!user) return res.status(404).json({ message: 'User nahi mila!' })
+    if (!user) {
+        return res.status(404).json({ message: 'User nahi mila!' })
+    }
 
     const valid = await bcrypt.compare(password, user.password)
-    if (!valid) return res.status(401).json({ message: 'Password galat hai!' })
+
+    if (!valid) {
+        return res.status(401).json({ message: 'Password galat hai!' })
+    }
 
     const token = jwt.sign(
         { id: user.id, email: user.email },
@@ -107,7 +123,7 @@ app.post('/login', async (req, res) => {
     res.json({ message: 'Login ho gaya!', token })
 })
 
-// CREATE PROJECT
+// ================= CREATE PROJECT =================
 app.post('/create-project', (req, res) => {
     const { name } = req.body
 
@@ -127,7 +143,7 @@ app.post('/create-project', (req, res) => {
     })
 })
 
-// FILE UPLOAD
+// ================= UPLOAD =================
 app.post('/upload', tokenCheck, projectCheck, upload.single('file'), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ message: 'Koi file nahi mili!' })
@@ -146,7 +162,7 @@ app.post('/upload', tokenCheck, projectCheck, upload.single('file'), (req, res) 
     })
 })
 
-// GET FILES
+// ================= GET FILES =================
 app.get('/files', tokenCheck, projectCheck, (req, res) => {
     const files = db.prepare(
         'SELECT * FROM files WHERE user_id = ? AND project_id = ?'
