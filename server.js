@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const multer = require('multer')
 const path = require('path')
+const crypto = require('crypto')
 const db = require('./database')
 
 const app = express()
@@ -102,6 +103,26 @@ app.post('/upload', tokenCheck, upload.single('file'), (req, res) => {
 app.get('/files', tokenCheck, (req, res) => {
     const files = db.prepare('SELECT * FROM files WHERE user_id = ?').all(req.user.id)
     res.json(files)
+})
+
+// CREATE PROJECT (separate route)
+app.post('/create-project', (req, res) => {
+    const { name } = req.body
+
+    if (!name) {
+        return res.status(400).json({ message: 'Project ka naam do!' })
+    }
+
+    const apiKey = crypto.randomBytes(16).toString('hex')
+
+    db.prepare(
+        'INSERT INTO projects (name, api_key) VALUES (?, ?)'
+    ).run(name, apiKey)
+
+    res.json({
+        message: 'Project create ho gaya ✅',
+        api_key: apiKey
+    })
 })
 
 const PORT = process.env.PORT || 3000
