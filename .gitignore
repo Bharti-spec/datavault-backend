@@ -1,0 +1,4 @@
+node_modules
+datavault.db
+uploads
+.env
