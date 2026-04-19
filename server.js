@@ -159,18 +159,17 @@ app.post('/upload', tokenCheck, projectCheck, upload.single('file'), async (req,
         if (!req.file) return res.status(400).json({ message: 'File nahi mili!' })
 
         console.log('Upload started:', req.file.filename)
-        console.log('B2_ENDPOINT:', process.env.B2_ENDPOINT)
-        console.log('B2_BUCKET:', process.env.B2_BUCKET_NAME)
-        console.log('B2_KEY_ID:', process.env.B2_KEY_ID)
+        console.log('File size:', req.file.size)
 
-        const fileContent = fs.readFileSync(req.file.path)
+        const fileStream = fs.createReadStream(req.file.path)
         const fileName = req.file.filename
 
         await s3.send(new PutObjectCommand({
             Bucket: process.env.B2_BUCKET_NAME,
             Key: fileName,
-            Body: fileContent,
-            ContentType: req.file.mimetype
+            Body: fileStream,
+            ContentType: req.file.mimetype,
+            ContentLength: req.file.size
         }))
 
         console.log('B2 upload successful!')
