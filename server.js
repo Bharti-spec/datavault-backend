@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken')
 const multer = require('multer')
 const crypto = require('crypto')
 const fs = require('fs')
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3')
 const pool = require('./database')
 
 const app = express()
@@ -21,6 +22,16 @@ if (!fs.existsSync('uploads')) {
 app.use('/uploads', express.static('uploads'))
 
 const SECRET = 'datavault-secret-key-123'
+
+// Backblaze B2 Client
+const s3 = new S3Client({
+    endpoint: process.env.B2_ENDPOINT,
+    region: 'us-east-005',
+    credentials: {
+        accessKeyId: process.env.B2_KEY_ID,
+        secretAccessKey: process.env.B2_APP_KEY
+    }
+})
 
 // MULTER
 const storage = multer.diskStorage({
@@ -141,12 +152,26 @@ app.post('/create-project', async (req, res) => {
     }
 })
 
-// UPLOAD
+// UPLOAD — Backblaze B2
 app.post('/upload', tokenCheck, projectCheck, upload.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ message: 'File nahi mili!' })
 
-        const url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`
+        const fileContent = fs.readFileSync(req.file.path)
+        const fileName = req.file.filename
+
+        // Backblaze pe upload
+        await s3.send(new PutObjectCommand({
+            Bucket: process.env.B2_BUCKET_NAME,
+            Key: fileName,
+            Body: fileContent,
+            ContentType: req.file.mimetype
+        }))
+
+        // Local file delete
+        fs.unlinkSync(req.file.path)
+
+        const url = `${process.env.B2_ENDPOINT}/${process.env.B2_BUCKET_NAME}/${fileName}`
 
         await pool.query(
             'INSERT INTO files (user_id, project_id, filename, url) VALUES ($1, $2, $3, $4)',
