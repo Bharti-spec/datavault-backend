@@ -157,10 +157,14 @@ app.post('/upload', tokenCheck, projectCheck, upload.single('file'), async (req,
     try {
         if (!req.file) return res.status(400).json({ message: 'File nahi mili!' })
 
+        console.log('Upload started:', req.file.filename)
+        console.log('B2_ENDPOINT:', process.env.B2_ENDPOINT)
+        console.log('B2_BUCKET:', process.env.B2_BUCKET_NAME)
+        console.log('B2_KEY_ID:', process.env.B2_KEY_ID)
+
         const fileContent = fs.readFileSync(req.file.path)
         const fileName = req.file.filename
 
-        // Backblaze pe upload
         await s3.send(new PutObjectCommand({
             Bucket: process.env.B2_BUCKET_NAME,
             Key: fileName,
@@ -168,7 +172,7 @@ app.post('/upload', tokenCheck, projectCheck, upload.single('file'), async (req,
             ContentType: req.file.mimetype
         }))
 
-        // Local file delete
+        console.log('B2 upload successful!')
         fs.unlinkSync(req.file.path)
 
         const url = `${process.env.B2_ENDPOINT}/${process.env.B2_BUCKET_NAME}/${fileName}`
@@ -180,6 +184,7 @@ app.post('/upload', tokenCheck, projectCheck, upload.single('file'), async (req,
 
         res.json({ message: 'File upload ho gayi!', url })
     } catch (err) {
+        console.error('UPLOAD ERROR DETAIL:', err)
         res.status(500).json({ message: 'Upload error', error: err.message })
     }
 })
