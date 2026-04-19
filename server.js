@@ -1,3 +1,5 @@
+require('dotenv').config()
+
 const express = require('express')
 const cors = require('cors')
 const bcrypt = require('bcrypt')
@@ -5,14 +7,13 @@ const jwt = require('jsonwebtoken')
 const multer = require('multer')
 const crypto = require('crypto')
 const fs = require('fs')
-const db = require('./database')
+const pool = require('./database')
 
 const app = express()
 app.use(cors())
 app.use(express.json())
 app.use(express.static('public'))
 
-// ================= ENSURE UPLOADS FOLDER =================
 if (!fs.existsSync('uploads')) {
     fs.mkdirSync('uploads')
 }
@@ -21,113 +22,93 @@ app.use('/uploads', express.static('uploads'))
 
 const SECRET = 'datavault-secret-key-123'
 
-// ================= MULTER =================
+// MULTER
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/')
-    },
-    filename: function (req, file, cb) {
-        const uniqueName = Date.now() + '-' + file.originalname
-        cb(null, uniqueName)
-    }
+    destination: (req, file, cb) => cb(null, 'uploads/'),
+    filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
 })
-
 const upload = multer({ storage })
 
-// ================= TOKEN CHECK =================
+// TOKEN CHECK
 function tokenCheck(req, res, next) {
     try {
-        const authHeader = req.headers['authorization']
-        const token = authHeader && authHeader.split(' ')[1]
-
-        if (!token) {
-            return res.status(401).json({ message: 'Token nahi hai!' })
-        }
-
-        const user = jwt.verify(token, SECRET)
-        req.user = user
+        const token = req.headers['authorization']?.split(' ')[1]
+        if (!token) return res.status(401).json({ message: 'Token nahi hai!' })
+        req.user = jwt.verify(token, SECRET)
         next()
     } catch {
-        return res.status(401).json({ message: 'Invalid token!' })
+        res.status(401).json({ message: 'Invalid token!' })
     }
 }
 
-// ================= PROJECT CHECK =================
-function projectCheck(req, res, next) {
+// PROJECT CHECK
+async function projectCheck(req, res, next) {
     try {
         const apiKey = req.headers['x-api-key']
+        if (!apiKey) return res.status(401).json({ message: 'API key missing!' })
 
-        if (!apiKey) {
-            return res.status(401).json({ message: 'API key missing hai!' })
-        }
+        const result = await pool.query(
+            'SELECT * FROM projects WHERE api_key = $1', [apiKey]
+        )
 
-        const project = db.prepare(
-            'SELECT * FROM projects WHERE api_key = ?'
-        ).get(apiKey)
-
-        if (!project) {
+        if (result.rows.length === 0) {
             return res.status(403).json({ message: 'Invalid API key!' })
         }
 
-        req.project = project
+        req.project = result.rows[0]
         next()
     } catch (err) {
         res.status(500).json({ message: 'Project check error', error: err.message })
     }
 }
 
-// ================= HOME =================
+// HOME
 app.get('/', (req, res) => {
     res.send('Datavault server chal raha hai 🚀')
 })
 
-// ================= REGISTER =================
+// REGISTER
 app.post('/register', async (req, res) => {
     try {
         const { naam, email, password } = req.body
-
-        if (!email || !password || !naam) {
+        if (!naam || !email || !password) {
             return res.status(400).json({ message: 'Sab fields fill karo!' })
         }
 
-        const existingUser = db.prepare(
-            'SELECT * FROM users WHERE email = ?'
-        ).get(email)
-
-        if (existingUser) {
+        const existing = await pool.query(
+            'SELECT * FROM users WHERE email = $1', [email]
+        )
+        if (existing.rows.length > 0) {
             return res.status(400).json({ message: 'User already exists!' })
         }
 
-        const encryptedPassword = await bcrypt.hash(password, 10)
+        const hash = await bcrypt.hash(password, 10)
+        const result = await pool.query(
+            'INSERT INTO users (naam, email, password) VALUES ($1, $2, $3) RETURNING id',
+            [naam, email, hash]
+        )
 
-        const result = db.prepare(
-            'INSERT INTO users (naam, email, password) VALUES (?, ?, ?)'
-        ).run(naam, email, encryptedPassword)
-
-        res.json({ message: 'User ban gaya!', id: result.lastInsertRowid })
+        res.json({ message: 'User ban gaya!', id: result.rows[0].id })
     } catch (err) {
         res.status(500).json({ message: 'Register error', error: err.message })
     }
 })
 
-// ================= LOGIN =================
+// LOGIN
 app.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body
 
-        const user = db.prepare(
-            'SELECT * FROM users WHERE email = ?'
-        ).get(email)
-
-        if (!user) {
+        const result = await pool.query(
+            'SELECT * FROM users WHERE email = $1', [email]
+        )
+        if (result.rows.length === 0) {
             return res.status(404).json({ message: 'User nahi mila!' })
         }
 
+        const user = result.rows[0]
         const valid = await bcrypt.compare(password, user.password)
-
-        if (!valid) {
-            return res.status(401).json({ message: 'Password galat hai!' })
-        }
+        if (!valid) return res.status(401).json({ message: 'Password galat hai!' })
 
         const token = jwt.sign(
             { id: user.id, email: user.email },
@@ -141,68 +122,55 @@ app.post('/login', async (req, res) => {
     }
 })
 
-// ================= CREATE PROJECT =================
-app.post('/create-project', (req, res) => {
+// CREATE PROJECT
+app.post('/create-project', async (req, res) => {
     try {
         const { name } = req.body
-
-        if (!name) {
-            return res.status(400).json({ message: 'Project ka naam do!' })
-        }
+        if (!name) return res.status(400).json({ message: 'Project ka naam do!' })
 
         const apiKey = crypto.randomBytes(16).toString('hex')
 
-        db.prepare(
-            'INSERT INTO projects (name, api_key) VALUES (?, ?)'
-        ).run(name, apiKey)
+        await pool.query(
+            'INSERT INTO projects (name, api_key) VALUES ($1, $2)',
+            [name, apiKey]
+        )
 
-        res.json({
-            message: 'Project create ho gaya ✅',
-            api_key: apiKey
-        })
+        res.json({ message: 'Project create ho gaya ✅', api_key: apiKey })
     } catch (err) {
         res.status(500).json({ message: 'Project error', error: err.message })
     }
 })
 
-// ================= UPLOAD =================
-app.post('/upload', tokenCheck, projectCheck, upload.single('file'), (req, res) => {
+// UPLOAD
+app.post('/upload', tokenCheck, projectCheck, upload.single('file'), async (req, res) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ message: 'Koi file nahi mili!' })
-        }
+        if (!req.file) return res.status(400).json({ message: 'File nahi mili!' })
 
         const url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`
 
-        db.prepare(
-            'INSERT INTO files (user_id, filename, url, project_id) VALUES (?, ?, ?, ?)'
-        ).run(req.user.id, req.file.filename, url, req.project.id)
+        await pool.query(
+            'INSERT INTO files (user_id, project_id, filename, url) VALUES ($1, $2, $3, $4)',
+            [req.user.id, req.project.id, req.file.filename, url]
+        )
 
-        res.json({
-            message: 'File upload ho gayi!',
-            filename: req.file.filename,
-            url: url
-        })
+        res.json({ message: 'File upload ho gayi!', url })
     } catch (err) {
         res.status(500).json({ message: 'Upload error', error: err.message })
     }
 })
 
-// ================= GET FILES =================
-app.get('/files', tokenCheck, projectCheck, (req, res) => {
+// GET FILES
+app.get('/files', tokenCheck, projectCheck, async (req, res) => {
     try {
-        const files = db.prepare(
-            'SELECT * FROM files WHERE user_id = ? AND project_id = ?'
-        ).all(req.user.id, req.project.id)
-
-        res.json(files)
+        const result = await pool.query(
+            'SELECT * FROM files WHERE user_id = $1 AND project_id = $2',
+            [req.user.id, req.project.id]
+        )
+        res.json(result.rows)
     } catch (err) {
-        res.status(500).json({ message: 'Fetch error', error: err.message })
+        res.status(500).json({ message: 'Files error', error: err.message })
     }
 })
 
 const PORT = process.env.PORT || 3000
-
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`)
-})
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
