@@ -30,7 +30,6 @@
             overflow-x: hidden;
         }
 
-        /* GRID BACKGROUND */
         body::before {
             content: '';
             position: fixed;
@@ -43,7 +42,6 @@
             z-index: 0;
         }
 
-        /* GLOW */
         body::after {
             content: '';
             position: fixed;
@@ -57,7 +55,6 @@
             z-index: 0;
         }
 
-        /* ===== AUTH PAGE ===== */
         #authPage {
             position: relative;
             z-index: 1;
@@ -93,134 +90,67 @@
             border-radius: 16px 16px 0 0;
         }
 
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 32px;
-        }
+        .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
 
         .logo-icon {
-            width: 36px;
-            height: 36px;
+            width: 36px; height: 36px;
             background: linear-gradient(135deg, var(--accent), var(--accent2));
             border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             font-size: 18px;
         }
 
         .logo-text {
             font-family: 'Syne', sans-serif;
-            font-size: 20px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
+            font-size: 20px; font-weight: 800; letter-spacing: -0.5px;
             background: linear-gradient(135deg, #fff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
 
-        .auth-title {
-            font-family: 'Syne', sans-serif;
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 6px;
-        }
-
-        .auth-sub {
-            font-size: 12px;
-            color: var(--muted);
-            margin-bottom: 28px;
-            letter-spacing: 0.5px;
-        }
+        .auth-title { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+        .auth-sub { font-size: 12px; color: var(--muted); margin-bottom: 28px; letter-spacing: 0.5px; }
 
         .tab-row {
-            display: flex;
-            gap: 4px;
-            background: var(--bg);
-            border-radius: 8px;
-            padding: 4px;
-            margin-bottom: 24px;
+            display: flex; gap: 4px;
+            background: var(--bg); border-radius: 8px; padding: 4px; margin-bottom: 24px;
         }
 
         .tab-btn {
-            flex: 1;
-            padding: 8px;
-            background: none;
-            border: none;
-            border-radius: 6px;
-            color: var(--muted);
-            font-family: 'DM Mono', monospace;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
+            flex: 1; padding: 8px; background: none; border: none;
+            border-radius: 6px; color: var(--muted);
+            font-family: 'DM Mono', monospace; font-size: 12px; cursor: pointer; transition: all 0.2s;
         }
 
-        .tab-btn.active {
-            background: var(--surface2);
-            color: var(--text);
-            border: 1px solid var(--border);
-        }
+        .tab-btn.active { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
 
-        .field {
-            margin-bottom: 16px;
-        }
+        .field { margin-bottom: 16px; }
 
         .field label {
-            display: block;
-            font-size: 11px;
-            color: var(--muted);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            margin-bottom: 6px;
+            display: block; font-size: 11px; color: var(--muted);
+            letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px;
         }
 
         .field input {
-            width: 100%;
-            padding: 11px 14px;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-family: 'DM Mono', monospace;
-            font-size: 13px;
-            outline: none;
-            transition: border-color 0.2s;
+            width: 100%; padding: 11px 14px;
+            background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+            color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px;
+            outline: none; transition: border-color 0.2s;
         }
 
-        .field input:focus {
-            border-color: var(--accent);
-        }
+        .field input:focus { border-color: var(--accent); }
 
         .btn-primary {
-            width: 100%;
-            padding: 12px;
-            background: var(--accent);
-            border: none;
-            border-radius: 8px;
-            color: #fff;
-            font-family: 'Syne', sans-serif;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 8px;
-            position: relative;
-            overflow: hidden;
+            width: 100%; padding: 12px; background: var(--accent); border: none;
+            border-radius: 8px; color: #fff; font-family: 'Syne', sans-serif;
+            font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+            margin-top: 8px; position: relative; overflow: hidden;
         }
 
-        .btn-primary:hover {
-            background: #2563eb;
-            transform: translateY(-1px);
-        }
-
+        .btn-primary:hover { background: #2563eb; transform: translateY(-1px); }
         .btn-primary:active { transform: translateY(0); }
 
         .btn-primary.loading::after {
-            content: '';
-            position: absolute;
-            inset: 0;
+            content: ''; position: absolute; inset: 0;
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
             animation: shimmer 1s infinite;
         }
@@ -230,225 +160,93 @@
             to { transform: translateX(100%); }
         }
 
-        .msg {
-            margin-top: 12px;
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-size: 12px;
-            display: none;
-        }
-
+        .msg { margin-top: 12px; padding: 10px 14px; border-radius: 8px; font-size: 12px; display: none; }
         .msg.success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: var(--green); display: block; }
         .msg.error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: var(--red); display: block; }
 
-        /* ===== DASHBOARD ===== */
-        #dashboard {
-            display: none;
-            position: relative;
-            z-index: 1;
-            min-height: 100vh;
-        }
+        #dashboard { display: none; position: relative; z-index: 1; min-height: 100vh; }
 
         .topbar {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: rgba(8,11,18,0.85);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border);
-            padding: 0 32px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(8,11,18,0.85); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border); padding: 0 32px;
+            height: 60px; display: flex; align-items: center; justify-content: space-between;
         }
 
-        .topbar-logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
+        .topbar-logo { display: flex; align-items: center; gap: 10px; }
         .topbar-logo .logo-icon { width: 28px; height: 28px; font-size: 14px; }
         .topbar-logo .logo-text { font-size: 16px; }
-
-        .topbar-right {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+        .topbar-right { display: flex; align-items: center; gap: 12px; }
 
         .user-badge {
-            padding: 5px 12px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            font-size: 11px;
-            color: var(--muted);
+            padding: 5px 12px; background: var(--surface2);
+            border: 1px solid var(--border); border-radius: 20px;
+            font-size: 11px; color: var(--muted);
         }
 
         .btn-ghost {
-            padding: 6px 14px;
-            background: none;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--muted);
-            font-family: 'DM Mono', monospace;
-            font-size: 11px;
-            cursor: pointer;
-            transition: all 0.2s;
+            padding: 6px 14px; background: none; border: 1px solid var(--border);
+            border-radius: 8px; color: var(--muted); font-family: 'DM Mono', monospace;
+            font-size: 11px; cursor: pointer; transition: all 0.2s;
         }
 
         .btn-ghost:hover { border-color: var(--accent); color: var(--text); }
 
-        .main {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 40px 32px;
-        }
+        .main { max-width: 1100px; margin: 0 auto; padding: 40px 32px; }
+        .page-header { margin-bottom: 32px; }
 
-        .page-header {
-            margin-bottom: 32px;
-        }
+        .page-title { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; margin-bottom: 6px; }
+        .page-sub { font-size: 12px; color: var(--muted); }
 
-        .page-title {
-            font-family: 'Syne', sans-serif;
-            font-size: 28px;
-            font-weight: 800;
-            margin-bottom: 6px;
-        }
-
-        .page-sub {
-            font-size: 12px;
-            color: var(--muted);
-        }
-
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-bottom: 32px;
-        }
+        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
 
         .stat-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            position: relative;
-            overflow: hidden;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 20px; position: relative; overflow: hidden;
         }
 
         .stat-card::after {
-            content: '';
-            position: absolute;
-            top: 0; right: 0;
+            content: ''; position: absolute; top: 0; right: 0;
             width: 60px; height: 60px;
             background: radial-gradient(circle, rgba(59,130,246,0.08), transparent);
         }
 
-        .stat-label {
-            font-size: 11px;
-            color: var(--muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-        }
+        .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .stat-value { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 700; }
 
-        .stat-value {
-            font-family: 'Syne', sans-serif;
-            font-size: 28px;
-            font-weight: 700;
-        }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
 
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin-bottom: 24px;
-        }
-
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            overflow: hidden;
-        }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
 
         .card-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            padding: 16px 20px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
         }
 
-        .card-title {
-            font-family: 'Syne', sans-serif;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 0.3px;
-        }
-
-        .badge {
-            padding: 3px 8px;
-            background: var(--subtle);
-            border-radius: 4px;
-            font-size: 10px;
-            color: var(--muted);
-        }
-
+        .card-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.3px; }
+        .badge { padding: 3px 8px; background: var(--subtle); border-radius: 4px; font-size: 10px; color: var(--muted); }
         .card-body { padding: 20px; }
 
-        /* UPLOAD AREA */
         .upload-zone {
-            border: 2px dashed var(--border);
-            border-radius: 10px;
-            padding: 32px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
+            border: 2px dashed var(--border); border-radius: 10px;
+            padding: 32px 20px; text-align: center; cursor: pointer;
+            transition: all 0.2s; position: relative;
         }
 
-        .upload-zone:hover, .upload-zone.drag {
-            border-color: var(--accent);
-            background: rgba(59,130,246,0.04);
-        }
-
+        .upload-zone:hover, .upload-zone.drag { border-color: var(--accent); background: rgba(59,130,246,0.04); }
         .upload-icon { font-size: 28px; margin-bottom: 10px; }
-
-        .upload-text {
-            font-size: 12px;
-            color: var(--muted);
-            line-height: 1.6;
-        }
-
-        .upload-text span {
-            color: var(--accent);
-            cursor: pointer;
-        }
-
+        .upload-text { font-size: 12px; color: var(--muted); line-height: 1.6; }
+        .upload-text span { color: var(--accent); cursor: pointer; }
         #fileInput { display: none; }
 
-        .upload-progress {
-            margin-top: 16px;
-            display: none;
-        }
+        .upload-progress { margin-top: 16px; display: none; }
 
-        .progress-bar {
-            height: 3px;
-            background: var(--border);
-            border-radius: 2px;
-            overflow: hidden;
-        }
+        .progress-bar { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
 
         .progress-fill {
             height: 100%;
             background: linear-gradient(90deg, var(--accent), var(--accent2));
             border-radius: 2px;
-            width: 0%;
-            transition: width 0.3s;
             animation: progressAnim 1.5s infinite;
         }
 
@@ -458,50 +256,25 @@
             100% { width: 20%; margin-left: 80%; }
         }
 
-        /* API KEY */
         .api-key-box {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 12px 14px;
-            font-size: 11px;
-            color: var(--accent2);
-            word-break: break-all;
-            margin-bottom: 12px;
-            position: relative;
-            letter-spacing: 0.5px;
+            background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+            padding: 12px 14px; font-size: 11px; color: var(--accent2);
+            word-break: break-all; margin-bottom: 12px; letter-spacing: 0.5px;
         }
 
         .copy-btn {
-            width: 100%;
-            padding: 9px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-family: 'DM Mono', monospace;
-            font-size: 11px;
-            cursor: pointer;
-            transition: all 0.2s;
+            width: 100%; padding: 9px; background: var(--surface2);
+            border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+            font-family: 'DM Mono', monospace; font-size: 11px; cursor: pointer; transition: all 0.2s;
         }
 
         .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-        /* FILES LIST */
-        .files-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            overflow: hidden;
-        }
+        .files-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
 
         .file-row {
-            display: flex;
-            align-items: center;
-            padding: 12px 20px;
-            border-bottom: 1px solid var(--border);
-            transition: background 0.15s;
-            animation: fadeIn 0.3s ease;
+            display: flex; align-items: center; padding: 12px 20px;
+            border-bottom: 1px solid var(--border); transition: background 0.15s; animation: fadeIn 0.3s ease;
         }
 
         @keyframes fadeIn {
@@ -513,84 +286,47 @@
         .file-row:hover { background: var(--surface2); }
 
         .file-icon {
-            width: 32px;
-            height: 32px;
-            background: var(--subtle);
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            margin-right: 12px;
-            flex-shrink: 0;
+            width: 32px; height: 32px; background: var(--subtle); border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; margin-right: 12px; flex-shrink: 0;
         }
 
         .file-info { flex: 1; min-width: 0; }
 
-        .file-name {
-            font-size: 12px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-bottom: 2px;
-        }
-
-        .file-meta {
-            font-size: 10px;
-            color: var(--muted);
-        }
-
+        .file-name { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+        .file-meta { font-size: 10px; color: var(--muted); }
         .file-actions { display: flex; gap: 8px; }
 
         .btn-icon {
-            padding: 5px 10px;
-            background: none;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--muted);
-            font-size: 11px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            transition: all 0.2s;
+            padding: 5px 10px; background: none; border: 1px solid var(--border);
+            border-radius: 6px; color: var(--muted); font-size: 11px; cursor: pointer;
+            text-decoration: none; display: inline-block; transition: all 0.2s;
             font-family: 'DM Mono', monospace;
         }
 
         .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
 
-        .empty-state {
-            padding: 48px 20px;
-            text-align: center;
-            color: var(--muted);
-            font-size: 12px;
+        .btn-delete {
+            padding: 5px 10px; background: none;
+            border: 1px solid rgba(239,68,68,0.3); border-radius: 6px;
+            color: var(--red); font-size: 11px; cursor: pointer; transition: all 0.2s;
+            font-family: 'DM Mono', monospace;
         }
 
+        .btn-delete:hover { background: rgba(239,68,68,0.1); border-color: var(--red); }
+
+        .empty-state { padding: 48px 20px; text-align: center; color: var(--muted); font-size: 12px; }
         .empty-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.5; }
 
-        /* TOAST */
         .toast {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 12px 18px;
-            font-size: 12px;
-            z-index: 9999;
-            transform: translateY(100px);
-            opacity: 0;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            position: fixed; bottom: 24px; right: 24px;
+            background: var(--surface2); border: 1px solid var(--border);
+            border-radius: 10px; padding: 12px 18px; font-size: 12px; z-index: 9999;
+            transform: translateY(100px); opacity: 0; transition: all 0.3s;
+            display: flex; align-items: center; gap: 8px;
         }
 
-        .toast.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
+        .toast.show { transform: translateY(0); opacity: 1; }
         .toast.success { border-color: rgba(16,185,129,0.4); }
         .toast.error { border-color: rgba(239,68,68,0.4); }
 
@@ -604,7 +340,7 @@
 </head>
 <body>
 
-<!-- ===== AUTH PAGE ===== -->
+<!-- AUTH PAGE -->
 <div id="authPage">
     <div class="auth-card">
         <div class="logo">
@@ -637,7 +373,7 @@
     </div>
 </div>
 
-<!-- ===== DASHBOARD ===== -->
+<!-- DASHBOARD -->
 <div id="dashboard">
     <div class="topbar">
         <div class="topbar-logo">
@@ -672,7 +408,6 @@
         </div>
 
         <div class="grid-2">
-            <!-- UPLOAD -->
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">Upload File</div>
@@ -697,7 +432,6 @@
                 </div>
             </div>
 
-            <!-- API KEY -->
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">API Access</div>
@@ -709,7 +443,6 @@
                     </div>
                     <div class="api-key-box" id="apiKeyDisplay">Loading...</div>
                     <button class="copy-btn" onclick="copyApiKey()">📋 Copy API Key</button>
-
                     <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
                         <div style="font-size:10px; color:var(--muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:1px;">Usage</div>
                         <div style="font-size:10px; color:var(--accent2); background:var(--bg); padding:10px; border-radius:6px; line-height:1.8;">
@@ -722,7 +455,6 @@
             </div>
         </div>
 
-        <!-- FILES -->
         <div class="files-card">
             <div class="card-header">
                 <div class="card-title">Your Files</div>
@@ -738,7 +470,6 @@
     </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <script>
@@ -749,7 +480,6 @@ let currentTab = 'login'
 
 if (token) showDashboard()
 
-// ===== TAB SWITCH =====
 function switchTab(tab) {
     currentTab = tab
     document.querySelectorAll('.tab-btn').forEach((b, i) => {
@@ -759,23 +489,15 @@ function switchTab(tab) {
     document.getElementById('authMsg').innerHTML = ''
 }
 
-// ===== AUTH =====
 async function submitAuth() {
     const email = document.getElementById('email').value
     const password = document.getElementById('password').value
     const btn = document.getElementById('authBtn')
-
     if (!email || !password) return showMsg('Fill all fields', 'error')
-
     btn.classList.add('loading')
     btn.disabled = true
-
-    if (currentTab === 'login') {
-        await login(email, password)
-    } else {
-        await register(email, password)
-    }
-
+    if (currentTab === 'login') { await login(email, password) }
+    else { await register(email, password) }
     btn.classList.remove('loading')
     btn.disabled = false
 }
@@ -791,10 +513,7 @@ async function login(email, password) {
         localStorage.setItem('token', data.token)
         token = data.token
         showDashboard()
-        document.getElementById('userEmail').textContent = email
-    } else {
-        showMsg(data.message, 'error')
-    }
+    } else { showMsg(data.message, 'error') }
 }
 
 async function register(email, password) {
@@ -804,15 +523,10 @@ async function register(email, password) {
         body: JSON.stringify({ naam: email.split('@')[0], email, password })
     })
     const data = await res.json()
-    if (res.ok) {
-        showMsg('Account created! Now login.', 'success')
-        switchTab('login')
-    } else {
-        showMsg(data.message, 'error')
-    }
+    if (res.ok) { showMsg('Account created! Now login.', 'success'); switchTab('login') }
+    else { showMsg(data.message, 'error') }
 }
 
-// ===== UPLOAD =====
 function handleDrop(e) {
     e.preventDefault()
     document.getElementById('uploadZone').classList.remove('drag')
@@ -827,39 +541,23 @@ async function uploadFile() {
 
 async function uploadFileObj(file) {
     document.getElementById('uploadProgress').style.display = 'block'
-
     const formData = new FormData()
     formData.append('file', file)
-
     const res = await fetch(`${API}/upload`, {
         method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'x-api-key': API_KEY
-        },
+        headers: { 'Authorization': `Bearer ${token}`, 'x-api-key': API_KEY },
         body: formData
     })
-
     document.getElementById('uploadProgress').style.display = 'none'
     const data = await res.json()
-
-    if (res.ok) {
-        showToast('✅ File uploaded!', 'success')
-        loadFiles()
-    } else {
-        showToast('❌ ' + data.message, 'error')
-    }
+    if (res.ok) { showToast('✅ File uploaded!', 'success'); loadFiles() }
+    else { showToast('❌ ' + data.message, 'error') }
 }
 
-// ===== LOAD FILES =====
 async function loadFiles() {
     const res = await fetch(`${API}/files`, {
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'x-api-key': API_KEY
-        }
+        headers: { 'Authorization': `Bearer ${token}`, 'x-api-key': API_KEY }
     })
-
     const files = await res.json()
     const list = document.getElementById('filesList')
 
@@ -878,11 +576,9 @@ async function loadFiles() {
                      ['mp4','mov','avi'].includes(ext) ? '🎬' :
                      ['mp3','wav'].includes(ext) ? '🎵' :
                      ['zip','rar'].includes(ext) ? '📦' : '📎'
-
         const date = new Date(f.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' })
-
         return `
-        <div class="file-row">
+        <div class="file-row" id="file-${f.id}">
             <div class="file-icon">${icon}</div>
             <div class="file-info">
                 <div class="file-name">${f.filename}</div>
@@ -890,35 +586,41 @@ async function loadFiles() {
             </div>
             <div class="file-actions">
                 <a class="btn-icon" href="${f.url}" target="_blank">Open ↗</a>
+                <button class="btn-delete" onclick="deleteFile(${f.id})">🗑️ Delete</button>
             </div>
         </div>`
     }).join('')
 }
 
-// ===== DASHBOARD =====
+async function deleteFile(id) {
+    if (!confirm('File delete karna chahte ho?')) return
+    const res = await fetch(`${API}/files/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}`, 'x-api-key': API_KEY }
+    })
+    const data = await res.json()
+    if (res.ok) {
+        showToast('🗑️ File deleted!', 'success')
+        loadFiles()
+    } else {
+        showToast('❌ ' + data.message, 'error')
+    }
+}
+
 function showDashboard() {
     document.getElementById('authPage').style.display = 'none'
     document.getElementById('dashboard').style.display = 'block'
     document.getElementById('apiKeyDisplay').textContent = API_KEY
     document.getElementById('projectId').textContent = API_KEY.substring(0, 8) + '...'
-
     const payload = token ? JSON.parse(atob(token.split('.')[1])) : null
     if (payload) document.getElementById('userEmail').textContent = payload.email
-
     loadFiles()
 }
 
-function logout() {
-    localStorage.removeItem('token')
-    location.reload()
-}
+function logout() { localStorage.removeItem('token'); location.reload() }
 
-function copyApiKey() {
-    navigator.clipboard.writeText(API_KEY)
-    showToast('📋 API key copied!', 'success')
-}
+function copyApiKey() { navigator.clipboard.writeText(API_KEY); showToast('📋 API key copied!', 'success') }
 
-// ===== HELPERS =====
 function showMsg(msg, type) {
     const el = document.getElementById('authMsg')
     el.className = `msg ${type}`

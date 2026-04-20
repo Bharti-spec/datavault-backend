@@ -202,5 +202,38 @@ app.get('/files', tokenCheck, projectCheck, async (req, res) => {
     }
 })
 
+// DELETE FILE
+app.delete('/files/:id', tokenCheck, projectCheck, async (req, res) => {
+    try {
+        const { id } = req.params
+
+        // File dhundho
+        const result = await pool.query(
+            'SELECT * FROM files WHERE id = $1 AND user_id = $2',
+            [id, req.user.id]
+        )
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'File nahi mili!' })
+        }
+
+        const file = result.rows[0]
+
+        // Backblaze se delete karo
+        const { DeleteObjectCommand } = require('@aws-sdk/client-s3')
+        await s3.send(new DeleteObjectCommand({
+            Bucket: process.env.B2_BUCKET_NAME,
+            Key: file.filename
+        }))
+
+        // Database se delete karo
+        await pool.query('DELETE FROM files WHERE id = $1', [id])
+
+        res.json({ message: 'File delete ho gayi! 🗑️' })
+    } catch (err) {
+        res.status(500).json({ message: 'Delete error', error: err.message })
+    }
+})
+
 const PORT = process.env.PORT || 3000
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
