@@ -240,7 +240,6 @@
         #fileInput { display: none; }
 
         .upload-progress { margin-top: 16px; display: none; }
-
         .progress-bar { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
 
         .progress-fill {
@@ -270,6 +269,20 @@
 
         .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
 
+        /* PROJECT ITEM */
+        .project-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 14px; background: var(--bg); border-radius: 8px;
+            margin-bottom: 8px; border: 1px solid var(--border);
+            transition: border-color 0.2s;
+        }
+
+        .project-item.active { border-color: var(--accent); }
+
+        .project-name { font-size: 12px; margin-bottom: 3px; }
+        .project-key { font-size: 10px; color: var(--muted); }
+        .project-actions { display: flex; gap: 8px; }
+
         .files-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
 
         .file-row {
@@ -292,7 +305,6 @@
         }
 
         .file-info { flex: 1; min-width: 0; }
-
         .file-name { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
         .file-meta { font-size: 10px; color: var(--muted); }
         .file-actions { display: flex; gap: 8px; }
@@ -398,8 +410,8 @@
                 <div class="stat-value" id="totalFiles">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Project ID</div>
-                <div class="stat-value" style="font-size:14px; padding-top:8px; color: var(--accent2);" id="projectId">—</div>
+                <div class="stat-label">Active Project</div>
+                <div class="stat-value" style="font-size:14px; padding-top:8px; color: var(--accent2);" id="activeProjectName">—</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Status</div>
@@ -407,7 +419,35 @@
             </div>
         </div>
 
+        <!-- PROJECTS CARD -->
+        <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+                <div class="card-title">Your Projects</div>
+                <div class="badge" id="projectCount">0 projects</div>
+            </div>
+            <div class="card-body">
+                <div style="display:flex; gap:10px; margin-bottom:16px;">
+                    <input type="text" id="newProjectName" placeholder="New project name..."
+                        style="flex:1; padding:9px 14px; background:var(--bg); border:1px solid var(--border);
+                        border-radius:8px; color:var(--text); font-family:'DM Mono',monospace; font-size:12px; outline:none;"
+                        onkeydown="if(event.key==='Enter') createProject()" />
+                    <button onclick="createProject()"
+                        style="padding:9px 16px; background:var(--accent); border:none; border-radius:8px;
+                        color:#fff; font-family:'Syne',sans-serif; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap;">
+                        + Create
+                    </button>
+                </div>
+                <div id="projectsList">
+                    <div class="empty-state" style="padding:20px;">
+                        <div class="empty-icon" style="font-size:20px;">📂</div>
+                        No projects yet
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="grid-2">
+            <!-- UPLOAD -->
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">Upload File</div>
@@ -432,16 +472,17 @@
                 </div>
             </div>
 
+            <!-- API KEY -->
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">API Access</div>
-                    <div class="badge">read only</div>
+                    <div class="badge">active project</div>
                 </div>
                 <div class="card-body">
                     <div style="font-size:11px; color:var(--muted); margin-bottom:12px; line-height:1.6;">
                         Use this key to connect your websites to Datavault.
                     </div>
-                    <div class="api-key-box" id="apiKeyDisplay">Loading...</div>
+                    <div class="api-key-box" id="apiKeyDisplay">Select a project first</div>
                     <button class="copy-btn" onclick="copyApiKey()">📋 Copy API Key</button>
                     <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
                         <div style="font-size:10px; color:var(--muted); margin-bottom:8px; text-transform:uppercase; letter-spacing:1px;">Usage</div>
@@ -455,6 +496,7 @@
             </div>
         </div>
 
+        <!-- FILES -->
         <div class="files-card">
             <div class="card-header">
                 <div class="card-title">Your Files</div>
@@ -474,12 +516,14 @@
 
 <script>
 const API = 'https://datavault-backend-5viv.onrender.com'
-const API_KEY = '04b653d44e291c584adbe3c76c6c9c3c'
 let token = localStorage.getItem('token')
 let currentTab = 'login'
+let activeProjectKey = localStorage.getItem('activeProjectKey') || ''
+let activeProjectName = localStorage.getItem('activeProjectName') || ''
 
 if (token) showDashboard()
 
+// ===== TAB SWITCH =====
 function switchTab(tab) {
     currentTab = tab
     document.querySelectorAll('.tab-btn').forEach((b, i) => {
@@ -489,6 +533,7 @@ function switchTab(tab) {
     document.getElementById('authMsg').innerHTML = ''
 }
 
+// ===== AUTH =====
 async function submitAuth() {
     const email = document.getElementById('email').value
     const password = document.getElementById('password').value
@@ -527,6 +572,92 @@ async function register(email, password) {
     else { showMsg(data.message, 'error') }
 }
 
+// ===== PROJECTS =====
+async function loadProjects() {
+    const res = await fetch(`${API}/projects`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    })
+    const projects = await res.json()
+    const list = document.getElementById('projectsList')
+    document.getElementById('projectCount').textContent = `${Array.isArray(projects) ? projects.length : 0} projects`
+
+    if (!Array.isArray(projects) || projects.length === 0) {
+        list.innerHTML = `<div style="font-size:12px; color:var(--muted); text-align:center; padding:16px;">No projects yet — create one above!</div>`
+        return
+    }
+
+    // Auto select first project if none selected
+    if (!activeProjectKey && projects.length > 0) {
+        activeProjectKey = projects[0].api_key
+        activeProjectName = projects[0].name
+        localStorage.setItem('activeProjectKey', activeProjectKey)
+        localStorage.setItem('activeProjectName', activeProjectName)
+    }
+
+    list.innerHTML = projects.map(p => `
+        <div class="project-item ${activeProjectKey === p.api_key ? 'active' : ''}">
+            <div>
+                <div class="project-name">${p.name}</div>
+                <div class="project-key">${p.api_key.substring(0,20)}...</div>
+            </div>
+            <div class="project-actions">
+                <button class="btn-icon" onclick="switchProject('${p.api_key}', '${p.name}')">
+                    ${activeProjectKey === p.api_key ? '✅ Active' : 'Switch'}
+                </button>
+                <button class="btn-icon" onclick="navigator.clipboard.writeText('${p.api_key}'); showToast('📋 Key copied!', 'success')">
+                    Copy Key
+                </button>
+            </div>
+        </div>
+    `).join('')
+
+    // Update UI
+    document.getElementById('activeProjectName').textContent = activeProjectName || '—'
+    document.getElementById('apiKeyDisplay').textContent = activeProjectKey || 'Select a project'
+}
+
+async function createProject() {
+    const name = document.getElementById('newProjectName').value.trim()
+    if (!name) return showToast('Project ka naam do!', 'error')
+
+    const res = await fetch(`${API}/create-project`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ name })
+    })
+
+    const data = await res.json()
+    if (res.ok) {
+        document.getElementById('newProjectName').value = ''
+        // Auto switch to new project
+        activeProjectKey = data.api_key
+        activeProjectName = name
+        localStorage.setItem('activeProjectKey', activeProjectKey)
+        localStorage.setItem('activeProjectName', activeProjectName)
+        showToast('✅ Project created!', 'success')
+        loadProjects()
+        loadFiles()
+    } else {
+        showToast('❌ ' + data.message, 'error')
+    }
+}
+
+function switchProject(apiKey, name) {
+    activeProjectKey = apiKey
+    activeProjectName = name
+    localStorage.setItem('activeProjectKey', activeProjectKey)
+    localStorage.setItem('activeProjectName', activeProjectName)
+    document.getElementById('activeProjectName').textContent = name
+    document.getElementById('apiKeyDisplay').textContent = apiKey
+    showToast(`🔄 Switched to ${name}`, 'success')
+    loadProjects()
+    loadFiles()
+}
+
+// ===== UPLOAD =====
 function handleDrop(e) {
     e.preventDefault()
     document.getElementById('uploadZone').classList.remove('drag')
@@ -540,23 +671,39 @@ async function uploadFile() {
 }
 
 async function uploadFileObj(file) {
+    if (!activeProjectKey) return showToast('Pehle project select karo!', 'error')
+
     document.getElementById('uploadProgress').style.display = 'block'
     const formData = new FormData()
     formData.append('file', file)
+
     const res = await fetch(`${API}/upload`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'x-api-key': API_KEY },
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'x-api-key': activeProjectKey
+        },
         body: formData
     })
+
     document.getElementById('uploadProgress').style.display = 'none'
     const data = await res.json()
     if (res.ok) { showToast('✅ File uploaded!', 'success'); loadFiles() }
     else { showToast('❌ ' + data.message, 'error') }
 }
 
+// ===== LOAD FILES =====
 async function loadFiles() {
+    if (!activeProjectKey) {
+        document.getElementById('filesList').innerHTML = `<div class="empty-state"><div class="empty-icon">📂</div>Select a project to see files</div>`
+        return
+    }
+
     const res = await fetch(`${API}/files`, {
-        headers: { 'Authorization': `Bearer ${token}`, 'x-api-key': API_KEY }
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'x-api-key': activeProjectKey
+        }
     })
     const files = await res.json()
     const list = document.getElementById('filesList')
@@ -592,34 +739,43 @@ async function loadFiles() {
     }).join('')
 }
 
+// ===== DELETE FILE =====
 async function deleteFile(id) {
     if (!confirm('File delete karna chahte ho?')) return
     const res = await fetch(`${API}/files/${id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}`, 'x-api-key': API_KEY }
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'x-api-key': activeProjectKey
+        }
     })
     const data = await res.json()
-    if (res.ok) {
-        showToast('🗑️ File deleted!', 'success')
-        loadFiles()
-    } else {
-        showToast('❌ ' + data.message, 'error')
-    }
+    if (res.ok) { showToast('🗑️ File deleted!', 'success'); loadFiles() }
+    else { showToast('❌ ' + data.message, 'error') }
 }
 
+// ===== DASHBOARD =====
 function showDashboard() {
     document.getElementById('authPage').style.display = 'none'
     document.getElementById('dashboard').style.display = 'block'
-    document.getElementById('apiKeyDisplay').textContent = API_KEY
-    document.getElementById('projectId').textContent = API_KEY.substring(0, 8) + '...'
     const payload = token ? JSON.parse(atob(token.split('.')[1])) : null
     if (payload) document.getElementById('userEmail').textContent = payload.email
+    loadProjects()
     loadFiles()
 }
 
-function logout() { localStorage.removeItem('token'); location.reload() }
+function logout() {
+    localStorage.removeItem('token')
+    localStorage.removeItem('activeProjectKey')
+    localStorage.removeItem('activeProjectName')
+    location.reload()
+}
 
-function copyApiKey() { navigator.clipboard.writeText(API_KEY); showToast('📋 API key copied!', 'success') }
+function copyApiKey() {
+    if (!activeProjectKey) return showToast('Pehle project select karo!', 'error')
+    navigator.clipboard.writeText(activeProjectKey)
+    showToast('📋 API key copied!', 'success')
+}
 
 function showMsg(msg, type) {
     const el = document.getElementById('authMsg')
