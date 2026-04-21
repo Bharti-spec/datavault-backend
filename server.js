@@ -154,6 +154,18 @@ app.post('/create-project', async (req, res) => {
     }
 })
 
+// GET ALL PROJECTS
+app.get('/projects', tokenCheck, async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM projects ORDER BY created_at DESC'
+        )
+        res.json(result.rows)
+    } catch (err) {
+        res.status(500).json({ message: 'Projects error', error: err.message })
+    }
+})
+
 // UPLOAD — Backblaze B2
 app.post('/upload', tokenCheck, projectCheck, upload.single('file'), async (req, res) => {
     try {
