@@ -7,7 +7,8 @@ const jwt = require('jsonwebtoken')
 const multer = require('multer')
 const crypto = require('crypto')
 const fs = require('fs')
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3')
+const { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3')
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner')
 const pool = require('./database')
 
 const app = express()
@@ -31,7 +32,7 @@ const s3 = new S3Client({
         accessKeyId: process.env.B2_KEY_ID,
         secretAccessKey: process.env.B2_APP_KEY
     },
-    forcePathStyle: true  // ✅ Yeh add karo
+    forcePathStyle: true
 })
 
 // MULTER
@@ -175,28 +176,50 @@ app.post('/upload', tokenCheck, projectCheck, upload.single('file'), async (req,
         console.log('B2 upload successful!')
         fs.unlinkSync(req.file.path)
 
-        const url = `${process.env.B2_ENDPOINT}/${process.env.B2_BUCKET_NAME}/${fileName}`
+        // Signed URL banao — 7 din ke liye valid
+        const signedUrl = await getSignedUrl(
+            s3,
+            new GetObjectCommand({
+                Bucket: process.env.B2_BUCKET_NAME,
+                Key: fileName
+            }),
+            { expiresIn: 604800 } // 7 din = 604800 seconds
+        )
 
         await pool.query(
             'INSERT INTO files (user_id, project_id, filename, url) VALUES ($1, $2, $3, $4)',
-            [req.user.id, req.project.id, req.file.filename, url]
+            [req.user.id, req.project.id, req.file.filename, signedUrl]
         )
 
-        res.json({ message: 'File upload ho gayi!', url })
+        res.json({ message: 'File upload ho gayi!', url: signedUrl })
     } catch (err) {
         console.error('UPLOAD ERROR DETAIL:', err)
         res.status(500).json({ message: 'Upload error', error: err.message })
     }
 })
 
-// GET FILES
+// GET FILES — Signed URLs ke saath
 app.get('/files', tokenCheck, projectCheck, async (req, res) => {
     try {
         const result = await pool.query(
             'SELECT * FROM files WHERE user_id = $1 AND project_id = $2',
             [req.user.id, req.project.id]
         )
-        res.json(result.rows)
+
+        // Har file ke liye fresh signed URL banao
+        const filesWithUrls = await Promise.all(result.rows.map(async (file) => {
+            const signedUrl = await getSignedUrl(
+                s3,
+                new GetObjectCommand({
+                    Bucket: process.env.B2_BUCKET_NAME,
+                    Key: file.filename
+                }),
+                { expiresIn: 604800 } // 7 din
+            )
+            return { ...file, url: signedUrl }
+        }))
+
+        res.json(filesWithUrls)
     } catch (err) {
         res.status(500).json({ message: 'Files error', error: err.message })
     }
@@ -207,7 +230,6 @@ app.delete('/files/:id', tokenCheck, projectCheck, async (req, res) => {
     try {
         const { id } = req.params
 
-        // File dhundho
         const result = await pool.query(
             'SELECT * FROM files WHERE id = $1 AND user_id = $2',
             [id, req.user.id]
@@ -219,14 +241,11 @@ app.delete('/files/:id', tokenCheck, projectCheck, async (req, res) => {
 
         const file = result.rows[0]
 
-        // Backblaze se delete karo
-        const { DeleteObjectCommand } = require('@aws-sdk/client-s3')
         await s3.send(new DeleteObjectCommand({
             Bucket: process.env.B2_BUCKET_NAME,
             Key: file.filename
         }))
 
-        // Database se delete karo
         await pool.query('DELETE FROM files WHERE id = $1', [id])
 
         res.json({ message: 'File delete ho gayi! 🗑️' })
