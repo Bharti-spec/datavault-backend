@@ -42,6 +42,8 @@ const storage = multer.diskStorage({
 })
 const upload = multer({ storage })
 
+// ===== MIDDLEWARE =====
+
 // TOKEN CHECK
 function tokenCheck(req, res, next) {
     try {
@@ -75,10 +77,19 @@ async function projectCheck(req, res, next) {
     }
 }
 
-// HOME
+// Safe table name helper
+function safeTable(projectId, tableName) {
+    // Only allow letters, numbers, underscore
+    const clean = tableName.replace(/[^a-zA-Z0-9_]/g, '')
+    return `p${projectId}_${clean}`
+}
+
+// ===== HOME =====
 app.get('/', (req, res) => {
     res.send('Datavault server chal raha hai 🚀')
 })
+
+// ===== AUTH =====
 
 // REGISTER
 app.post('/register', async (req, res) => {
@@ -135,6 +146,8 @@ app.post('/login', async (req, res) => {
     }
 })
 
+// ===== PROJECTS =====
+
 // CREATE PROJECT
 app.post('/create-project', async (req, res) => {
     try {
@@ -166,13 +179,12 @@ app.get('/projects', tokenCheck, async (req, res) => {
     }
 })
 
-// UPLOAD — Backblaze B2
+// ===== FILE STORAGE =====
+
+// UPLOAD
 app.post('/upload', tokenCheck, projectCheck, upload.single('file'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ message: 'File nahi mili!' })
-
-        console.log('Upload started:', req.file.filename)
-        console.log('File size:', req.file.size)
 
         const fileStream = fs.createReadStream(req.file.path)
         const fileName = req.file.filename
@@ -185,17 +197,15 @@ app.post('/upload', tokenCheck, projectCheck, upload.single('file'), async (req,
             ContentLength: req.file.size
         }))
 
-        console.log('B2 upload successful!')
         fs.unlinkSync(req.file.path)
 
-        // Signed URL banao — 7 din ke liye valid
         const signedUrl = await getSignedUrl(
             s3,
             new GetObjectCommand({
                 Bucket: process.env.B2_BUCKET_NAME,
                 Key: fileName
             }),
-            { expiresIn: 604800 } // 7 din = 604800 seconds
+            { expiresIn: 604800 }
         )
 
         await pool.query(
@@ -205,12 +215,11 @@ app.post('/upload', tokenCheck, projectCheck, upload.single('file'), async (req,
 
         res.json({ message: 'File upload ho gayi!', url: signedUrl })
     } catch (err) {
-        console.error('UPLOAD ERROR DETAIL:', err)
         res.status(500).json({ message: 'Upload error', error: err.message })
     }
 })
 
-// GET FILES — Signed URLs ke saath
+// GET FILES
 app.get('/files', tokenCheck, projectCheck, async (req, res) => {
     try {
         const result = await pool.query(
@@ -218,7 +227,6 @@ app.get('/files', tokenCheck, projectCheck, async (req, res) => {
             [req.user.id, req.project.id]
         )
 
-        // Har file ke liye fresh signed URL banao
         const filesWithUrls = await Promise.all(result.rows.map(async (file) => {
             const signedUrl = await getSignedUrl(
                 s3,
@@ -226,7 +234,7 @@ app.get('/files', tokenCheck, projectCheck, async (req, res) => {
                     Bucket: process.env.B2_BUCKET_NAME,
                     Key: file.filename
                 }),
-                { expiresIn: 604800 } // 7 din
+                { expiresIn: 604800 }
             )
             return { ...file, url: signedUrl }
         }))
@@ -261,6 +269,199 @@ app.delete('/files/:id', tokenCheck, projectCheck, async (req, res) => {
         await pool.query('DELETE FROM files WHERE id = $1', [id])
 
         res.json({ message: 'File delete ho gayi! 🗑️' })
+    } catch (err) {
+        res.status(500).json({ message: 'Delete error', error: err.message })
+    }
+})
+
+// ===== DATABASE API =====
+
+// List all tables of a project
+app.get('/api/tables', tokenCheck, projectCheck, async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM dv_tables WHERE project_id = $1 ORDER BY created_at DESC',
+            [req.project.id]
+        )
+        res.json({ tables: result.rows })
+    } catch (err) {
+        res.status(500).json({ message: 'Error', error: err.message })
+    }
+})
+
+// Create Table
+app.post('/api/table/create', tokenCheck, projectCheck, async (req, res) => {
+    try {
+        const { table_name, columns } = req.body
+        const projectId = req.project.id
+
+        if (!table_name || !columns) {
+            return res.status(400).json({ message: 'Table name aur columns do!' })
+        }
+
+        const tableName = safeTable(projectId, table_name)
+
+        const colDefs = Object.entries(columns).map(([name, type]) => {
+            const pgType = type === 'number' ? 'NUMERIC' :
+                          type === 'boolean' ? 'BOOLEAN' :
+                          type === 'date' ? 'TIMESTAMP' : 'TEXT'
+            return `"${name}" ${pgType}`
+        }).join(', ')
+
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS "${tableName}" (
+                id SERIAL PRIMARY KEY,
+                ${colDefs},
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        `)
+
+        await pool.query(
+            'INSERT INTO dv_tables (project_id, table_name, columns) VALUES ($1, $2, $3) ON CONFLICT (project_id, table_name) DO NOTHING',
+            [projectId, table_name, JSON.stringify(columns)]
+        )
+
+        res.json({ message: 'Table ban gayi! ✅', table: table_name })
+    } catch (err) {
+        res.status(500).json({ message: 'Table create error', error: err.message })
+    }
+})
+
+// Delete Table
+app.delete('/api/table/:table_name', tokenCheck, projectCheck, async (req, res) => {
+    try {
+        const { table_name } = req.params
+        const projectId = req.project.id
+        const tableName = safeTable(projectId, table_name)
+
+        await pool.query(`DROP TABLE IF EXISTS "${tableName}"`)
+        await pool.query(
+            'DELETE FROM dv_tables WHERE project_id = $1 AND table_name = $2',
+            [projectId, table_name]
+        )
+
+        res.json({ message: 'Table delete ho gayi! 🗑️' })
+    } catch (err) {
+        res.status(500).json({ message: 'Table delete error', error: err.message })
+    }
+})
+
+// Insert Data
+app.post('/api/:table/insert', tokenCheck, projectCheck, async (req, res) => {
+    try {
+        const { table } = req.params
+        const projectId = req.project.id
+        const data = req.body
+
+        if (!data || Object.keys(data).length === 0) {
+            return res.status(400).json({ message: 'Data do!' })
+        }
+
+        const tableName = safeTable(projectId, table)
+        const keys = Object.keys(data)
+        const values = Object.values(data)
+        const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ')
+        const colNames = keys.map(k => `"${k}"`).join(', ')
+
+        const result = await pool.query(
+            `INSERT INTO "${tableName}" (${colNames}) VALUES (${placeholders}) RETURNING *`,
+            values
+        )
+
+        res.json({ data: result.rows[0], message: 'Data add ho gaya! ✅' })
+    } catch (err) {
+        res.status(500).json({ message: 'Insert error', error: err.message })
+    }
+})
+
+// Select Data
+app.get('/api/:table/select', tokenCheck, projectCheck, async (req, res) => {
+    try {
+        const { table } = req.params
+        const projectId = req.project.id
+        const { filter, limit, order } = req.query
+
+        const tableName = safeTable(projectId, table)
+        let query = `SELECT * FROM "${tableName}"`
+        const values = []
+
+        if (filter) {
+            const f = JSON.parse(filter)
+            const conditions = Object.entries(f).map(([k, v], i) => {
+                values.push(v)
+                return `"${k}" = $${i + 1}`
+            })
+            query += ` WHERE ${conditions.join(' AND ')}`
+        }
+
+        query += ` ORDER BY created_at ${order === 'asc' ? 'ASC' : 'DESC'}`
+
+        if (limit) query += ` LIMIT ${parseInt(limit)}`
+
+        const result = await pool.query(query, values)
+        res.json({ data: result.rows })
+    } catch (err) {
+        res.status(500).json({ message: 'Select error', error: err.message })
+    }
+})
+
+// Update Data
+app.patch('/api/:table/update', tokenCheck, projectCheck, async (req, res) => {
+    try {
+        const { table } = req.params
+        const projectId = req.project.id
+        const { filter, data } = req.body
+
+        if (!data) return res.status(400).json({ message: 'Data do!' })
+
+        const tableName = safeTable(projectId, table)
+        const dataKeys = Object.keys(data)
+        const dataValues = Object.values(data)
+
+        const setClause = dataKeys.map((k, i) => `"${k}" = $${i + 1}`).join(', ')
+        const allValues = [...dataValues]
+
+        let query = `UPDATE "${tableName}" SET ${setClause}`
+
+        if (filter) {
+            const filterEntries = Object.entries(filter)
+            const filterClause = filterEntries.map(([k, v], i) => {
+                allValues.push(v)
+                return `"${k}" = $${dataKeys.length + i + 1}`
+            })
+            query += ` WHERE ${filterClause.join(' AND ')}`
+        }
+
+        query += ' RETURNING *'
+        const result = await pool.query(query, allValues)
+        res.json({ data: result.rows, message: 'Updated! ✅' })
+    } catch (err) {
+        res.status(500).json({ message: 'Update error', error: err.message })
+    }
+})
+
+// Delete Data
+app.delete('/api/:table/delete', tokenCheck, projectCheck, async (req, res) => {
+    try {
+        const { table } = req.params
+        const projectId = req.project.id
+        const { filter } = req.body
+
+        const tableName = safeTable(projectId, table)
+        const values = []
+        let query = `DELETE FROM "${tableName}"`
+
+        if (filter) {
+            const conditions = Object.entries(filter).map(([k, v], i) => {
+                values.push(v)
+                return `"${k}" = $${i + 1}`
+            })
+            query += ` WHERE ${conditions.join(' AND ')}`
+        }
+
+        query += ' RETURNING *'
+        const result = await pool.query(query, values)
+        res.json({ data: result.rows, message: 'Deleted! ✅' })
     } catch (err) {
         res.status(500).json({ message: 'Delete error', error: err.message })
     }

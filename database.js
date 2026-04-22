@@ -5,8 +5,8 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 })
 
-// Tables banao
 async function initDB() {
+    // Users table
     await pool.query(`
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
@@ -17,6 +17,7 @@ async function initDB() {
         )
     `)
 
+    // Projects table
     await pool.query(`
         CREATE TABLE IF NOT EXISTS projects (
             id SERIAL PRIMARY KEY,
@@ -26,6 +27,7 @@ async function initDB() {
         )
     `)
 
+    // Files table
     await pool.query(`
         CREATE TABLE IF NOT EXISTS files (
             id SERIAL PRIMARY KEY,
@@ -37,9 +39,20 @@ async function initDB() {
         )
     `)
 
+    // Datavault Tables Registry — developer ki tables ka record
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS dv_tables (
+            id SERIAL PRIMARY KEY,
+            project_id INTEGER NOT NULL,
+            table_name TEXT NOT NULL,
+            columns JSONB,
+            created_at TIMESTAMP DEFAULT NOW(),
+            UNIQUE(project_id, table_name)
+        )
+    `)
+
     console.log('Database ready hai! ✅')
 }
 
 initDB()
-
 module.exports = pool
