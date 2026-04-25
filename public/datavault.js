@@ -2,7 +2,7 @@ class Datavault {
     constructor(apiKey, baseUrl = 'https://datavault-backend-5viv.onrender.com') {
         this.apiKey = apiKey
         this.baseUrl = baseUrl
-        this.token = null
+        this.token = localStorage.getItem('dv_token') || null
     }
 
     async login(email, password) {
@@ -29,8 +29,10 @@ class Datavault {
         return {
             async select(filter = null, limit = null) {
                 let url = `${self.baseUrl}/api/${table}/select`
-                if (filter) url += `?filter=${JSON.stringify(filter)}`
-                if (limit) url += `${filter ? '&' : '?'}limit=${limit}`
+                const params = []
+                if (filter) params.push(`filter=${JSON.stringify(filter)}`)
+                if (limit) params.push(`limit=${limit}`)
+                if (params.length) url += '?' + params.join('&')
                 const res = await fetch(url, { headers: self._headers() })
                 return res.json()
             },
@@ -66,6 +68,13 @@ class Datavault {
             method: 'POST',
             headers: this._headers(),
             body: JSON.stringify({ table_name: name, columns })
+        })
+        return res.json()
+    }
+
+    async getTables() {
+        const res = await fetch(`${this.baseUrl}/api/tables`, {
+            headers: this._headers()
         })
         return res.json()
     }
